@@ -16,7 +16,7 @@ class Intelligence:
         self.client = genai.Client(api_key=self.api_key)
         # Using Gemini 2.0 Flash as recommended for new SDK, or fallback to 1.5 if 2.0 not available to user yet.
         # User requested "newest models (like Gemini 2.0)".
-        self.model_name = 'gemini-2.0-flash'
+        self.model_name = 'gemini-3-pro-preview'
 
     def transcribe_image(self, image_path: str) -> str:
         """
@@ -29,7 +29,7 @@ class Intelligence:
             # The google-genai SDK 0.x/1.x supports uploading.
              
             # Method 1: UploadFile (Good for large context or reuse, though we use it once here)
-            file_ref = self.client.files.upload(path=image_path)
+            file_ref = self.client.files.upload(file=image_path)
             
             # Method 2: PIL Image (Simpler for single calls, but let's stick to file ref as it effectively handles formats)
             # image = PIL.Image.open(image_path)

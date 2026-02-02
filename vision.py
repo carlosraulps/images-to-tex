@@ -91,28 +91,47 @@ def get_image_grouping(folder_path: str) -> Dict[str, List[str]]:
     Scans the folder for images matching 'TitleXImageY.format'.
     Returns a dictionary mapping 'Title' to a list of sorted image paths.
     """
-    groups = {}
-    pattern = re.compile(r"(.+)XImage(\d+)\.(png|jpg|jpeg|pdf)$", re.IGNORECASE)
-
-    # First pass: Handle PDFs (if any are lying around not processed yet? 
-    # The requirement says "If PDFs are detected, automatically ... split ... and store them".
-    # We should probably do that in the main loop or here.
-    # Let's assume the main app calls process_pdf first, then this function scans for images.
+    # Support multiple naming patterns:
+    # 1. TitleXImageY.png (Strict)
+    # 2. Title Number.jpg (Space separated)
+    # 3. Title-Number.jpg (Hyphen/Underscore separated)
+    # We use a flexible regex that looks for a number at the end of the filename.
     
+    # Pattern explanation:
+    # ^(.+?)        : Capture the Title (non-greedy) at the start
+    # [\sX_-]+      : Separator (Spaces, 'X', '_', '-') - one or more
+    # (\d+)         : The Image/Page Number
+    # \.(...)$      : Extension
+    pattern = re.compile(r"^(.+?)[\sX_-]+(\d+)\.(png|jpg|jpeg|pdf|webp)$", re.IGNORECASE)
+
     files = sorted(os.listdir(folder_path))
     
     for f in files:
         full_path = os.path.join(folder_path, f)
         if not os.path.isfile(full_path):
             continue
+        
+        # Skip hidden files
+        if f.startswith('.'):
+            continue
             
         match = pattern.match(f)
         if match:
-            title = match.group(1)
-            # image_num = int(match.group(2)) # Store for sorting if needed
+            title = match.group(1).strip()
+            # image_num = int(match.group(2))
             if title not in groups:
                 groups[title] = []
             groups[title].append(full_path)
+            
+    # If no groups found with strict/flexible pattern, fallback to treating the whole folder as one group?
+    # The requirement was "Parse filenames based on the pattern". 
+    # But if the user has loose filenames "Page1.jpg", "Page2.jpg", title might comprise "Page".
+    # With ^(.+?)[\sX_-]+(\d+), "Page1.jpg" might fail if there is no separator (matches 'Page' but needs separator).
+    # Let's verify if we need to support "Page1.jpg". The user has "Quick Notes 1.jpg", so there is a space.
+    # My regex `[\sX_-]+` requires at least one separator. 
+    # Let's allow matches where the number is just attached? e.g. "slide1.jpg".
+    # Regex: `^(.+?)(\d+)\.` might happen if the generic `.+?` is used.
+    # But let's stick to the user's observed pattern first (Space separated).
     
     # Sort images in each group by the number Y
     for title in groups:

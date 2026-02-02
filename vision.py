@@ -97,6 +97,8 @@ def get_image_grouping(folder_path: str) -> Dict[str, List[str]]:
     # 3. Title-Number.jpg (Hyphen/Underscore separated)
     # We use a flexible regex that looks for a number at the end of the filename.
     
+    groups = {}
+    
     # Pattern explanation:
     # ^(.+?)        : Capture the Title (non-greedy) at the start
     # [\sX_-]+      : Separator (Spaces, 'X', '_', '-') - one or more

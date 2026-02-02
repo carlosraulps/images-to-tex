@@ -33,6 +33,12 @@ class Memory:
         """
         file_id = self._get_file_id(image_path)
         if file_id in self.state:
+            # Check for "Poisoned State": existing error message
+            content = self.state[file_id].get('content', "")
+            if "% Error processing image" in content:
+                print(f"Retrying failed image: {os.path.basename(image_path)}")
+                return False
+
             # Check if file has been modified since last process
             last_mtime = self.state[file_id].get('mtime', 0)
             current_mtime = os.path.getmtime(image_path)

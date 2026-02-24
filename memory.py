@@ -35,7 +35,18 @@ class Memory:
         if file_id in self.state:
             # Check for "Poisoned State": existing error message
             content = self.state[file_id].get('content', "")
-            if "% Error processing image" in content:
+            
+            # Handle both string (old cache) and dict (new cache) formats
+            error_found = False
+            if isinstance(content, str):
+                if "% Error processing image" in content:
+                    error_found = True
+            elif isinstance(content, dict):
+                # Check if "latex" or "markdown" values contain the error
+                if "% Error processing image" in content.get("latex", "") or "% Error processing image" in content.get("markdown", ""):
+                    error_found = True
+                    
+            if error_found:
                 print(f"Retrying failed image: {os.path.basename(image_path)}")
                 return False
 

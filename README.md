@@ -1,6 +1,6 @@
 # OCR-to-LaTeX & Markdown Converter
 
-A modular Python application that transforms handwritten notes (PDFs or Images) into editable, semantic **LaTeX** code and **Markdown** documents using the **Google Gemini** API.
+A modular Python application that transforms handwritten notes (PDFs or Images) into editable, semantic LaTeX code using the **Google Gemini 2.0** API.
 
 ## Features
 

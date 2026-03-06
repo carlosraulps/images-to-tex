@@ -100,11 +100,11 @@ def get_image_grouping(folder_path: str) -> Dict[str, List[str]]:
     groups = {}
     
     # Pattern explanation:
-    # ^(.+?)        : Capture the Title (non-greedy) at the start
-    # [\sX_-]+      : Separator (Spaces, 'X', '_', '-') - one or more
-    # (\d+)         : The Image/Page Number
-    # \.(...)$      : Extension
-    pattern = re.compile(r"^(.+?)[\sX_-]+(\d+)\.(png|jpg|jpeg|pdf|webp)$", re.IGNORECASE)
+    # ^(.+?)                : Capture the Title (non-greedy) at the start
+    # (?:[\sX_-]+|XImage)   : Separator (Spaces, 'X', '_', '-', or 'XImage' literal)
+    # (\d+)                 : The Image/Page Number
+    # \.(...)$              : Extension
+    pattern = re.compile(r"^(.+?)(?:[\sX_-]+|XImage)(\d+)\.(png|jpg|jpeg|pdf|webp)$", re.IGNORECASE)
 
     files = sorted(os.listdir(folder_path))
     

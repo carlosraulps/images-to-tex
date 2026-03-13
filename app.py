@@ -13,6 +13,16 @@ def main():
         sys.exit(1)
 
     source_dir = sys.argv[1]
+    
+    while True:
+        mode = input("What would you like to generate? (latex/markdown/both) [both]: ").strip().lower()
+        if not mode:
+            mode = "both"
+            break
+        if mode in ["latex", "markdown", "both"]:
+            break
+        print("Invalid input. Please enter 'latex', 'markdown', or 'both'.")
+
     if not os.path.exists(source_dir):
         print(f"Error: Directory {source_dir} does not exist.")
         sys.exit(1)
@@ -60,7 +70,7 @@ def main():
                 enhanced_path = vision.enhance_image(img_path)
                 
                 # Transcribe
-                content = intel.transcribe_image(enhanced_path)
+                content = intel.transcribe_image(enhanced_path, mode=mode)
                 
                 # Cleanup enhanced temp file
                 if enhanced_path != img_path and "_enhanced" in enhanced_path:
@@ -77,27 +87,34 @@ def main():
 
             # Separate content
             if isinstance(content, dict):
-                latex_list.append(content.get("latex", ""))
-                markdown_list.append(content.get("markdown", ""))
+                if mode in ["latex", "both"]:
+                    latex_list.append(content.get("latex", ""))
+                if mode in ["markdown", "both"]:
+                    markdown_list.append(content.get("markdown", ""))
             else:
                 # Fallback for old cached strings
-                latex_list.append(content)
-                markdown_list.append("*(Markdown not generated for this cached page)*\n\n```latex\n" + content + "\n```")
+                if mode in ["latex", "both"]:
+                    latex_list.append(content)
+                if mode in ["markdown", "both"]:
+                    markdown_list.append("*(Markdown not generated for this cached page)*\n\n```latex\n" + content + "\n```")
 
         # 4. Generate Output
-        tex_output_path = latex.generate_tex_file(title, latex_list, source_dir)
-        if tex_output_path:
-            print(f"Generated LaTeX: {tex_output_path}")
+        if mode in ["latex", "both"]:
+            tex_output_path = latex.generate_tex_file(title, latex_list, source_dir)
+            if tex_output_path:
+                print(f"Generated LaTeX: {tex_output_path}")
             
-        md_output_path = markdown.generate_md_file(title, markdown_list, source_dir)
-        if md_output_path:
-            print(f"Generated Markdown: {md_output_path}")
+        if mode in ["markdown", "both"]:
+            md_output_path = markdown.generate_md_file(title, markdown_list, source_dir)
+            if md_output_path:
+                print(f"Generated Markdown: {md_output_path}")
 
     # 5. Final Report
     print("\n" + "="*30)
     print("Processing Complete.")
-    print("Add the following packages to your main LaTeX document:")
-    print(latex.get_packages_block())
+    if mode in ["latex", "both"]:
+        print("Add the following packages to your main LaTeX document:")
+        print(latex.get_packages_block())
     print("="*30)
 
 if __name__ == "__main__":

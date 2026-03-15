@@ -8,6 +8,7 @@ A modular Python application that transforms handwritten notes (PDFs or Images) 
 - **Automated Workflow**: Splits PDFs, processes images, and generates documents automatically.
 - **Smart Vision**: Enhances images (denoising, deskewing) with OpenCV before processing.
 - **Incremental Processing**: Skips already processed images using a smart cache to save time and API tokens.
+- **Self-Correction & Resiliency**: Built-in retry loops and prompt engineering handle malformed LLM JSON outputs autonomously.
 - **Semantic Understanding**: Uses Gemini models to interpret equations, theorems, and proofs correctly.
 - **Figure Handling**: Detected diagrams are captioned and placed in proper `figure` environments (LaTeX) or image placeholders (Markdown).
 
@@ -49,6 +50,11 @@ Run the `app.py` script pointing to your source directory:
 python3 app.py /path/to/your/notes/folder
 ```
 
+You will be prompted to choose the output format interactively:
+```text
+What would you like to generate? (latex/markdown/both) [both]:
+```
+
 ### Folder Structure & Naming
 - The script looks for **PDFs** (which it splits automatically) or **Images**.
 - Images are grouped by title using the pattern: `TitleNameXImageNumber.png`.
@@ -63,10 +69,46 @@ python3 app.py /path/to/your/notes/folder
 
 - `vision.py`: Image pre-processing and PDF handling.
 - `intelligence.py`: Interface with Google Gen AI SDK (Gemini).
+- `llm_utils.py`: Utilities for LLM JSON sanitization and self-correction retry loops.
 - `memory.py`: State management for incremental builds.
 - `latex.py`: LaTeX generation and package management.
 - `markdown.py`: Markdown file generation.
 - `app.py`: Main entry point and orchestration.
+
+## MCP Server & Agent Skill Setup
+
+This repository can now be run as a standard Model Context Protocol (MCP) server, allowing AI assistants to interact with it directly as a "Skill".
+
+### 1. Install MCP Dependencies
+
+```bash
+pip install mcp
+```
+
+### 2. Register the Extension
+
+Add the connection configuration to your AI agent's extension config (e.g., `gemini-extension.json` or `claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "images-to-tex": {
+      "command": "python3",
+      "args": [
+        "/absolute/path/to/img-to-tex/mcp_server.py"
+      ],
+      "env": {
+        "GOOGLE_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+### 3. Invoke the Skill
+
+Once registered, your AI agent can natively run commands like:
+> "Convert the handwritten notes at `/path/to/notes.png` into LaTeX code."
 
 ## License
 

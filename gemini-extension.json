@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "images-to-tex": {
+      "command": "python3",
+      "args": [
+        "/Users/apple/Research/img-to-tex/mcp_server.py"
+      ],
+      "env": {
+        "GOOGLE_API_KEY": "${GOOGLE_API_KEY}"
+      }
+    }
+  }
+}

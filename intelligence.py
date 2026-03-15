@@ -29,7 +29,7 @@ class Intelligence:
             file_ref = self.client.files.upload(file=image_path)
             
             if mode == "latex":
-                prompt = """
+                prompt = r"""
                 You are an expert academic typesetter and AI assistant. 
                 Your task is to transcribe the handwritten notes well structure with all the page complete content also trascribed in this image into high-quality LaTeX code.
                 Return a JSON object with one key: "latex".
@@ -38,7 +38,7 @@ class Intelligence:
                 1. **Content Accuracy**: Transcribe all the content of the page, all the text exactly as written, preserving the original meaning. Do not summarize or alter the content.
                 2. **Math Formatting**: Convert all mathematical expressions into valid LaTeX expressions. 
                    - Use standard notation for fractions, superscripts, subscripts, integrals, etc.
-                   - Ensure equations are properly delimited (inline $...$ or display $$...$$ or \\begin{align}...\\end{align} or \\begin{equation}...\\end{equation}).
+                   - Ensure equations are properly delimited (inline $...$ or display \[...\] or \\begin{align}...\\end{align} or \\begin{equation}...\\end{equation}).
                 3. **Figures & Diagrams**: 
                    - DO NOT attempt to create ASCII art. 
                    - If you detect a diagram, plot, or figure, insert a placeholder:
@@ -60,7 +60,7 @@ class Intelligence:
                 - The entire response must be parsable by `json.loads()`.
                 """
             elif mode == "markdown":
-                prompt = """
+                prompt = r"""
                 You are an expert academic typesetter and AI assistant. 
                 Your task is to transcribe the handwritten notes well structure with all the page complete content also trascribed in this image into a standard Markdown document.
                 Return a JSON object with one key: "markdown".

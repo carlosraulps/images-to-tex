@@ -141,3 +141,63 @@ class BatchProcessor:
                 
         except Exception as e:
              return {"status": "error", "message": str(e)}
+
+    def download_and_extract_results(self, job_name: str, output_format: str, output_dir: str) -> str:
+        """Downloads the batch results and extracts latex or markdown."""
+        try:
+            job = self.client.batches.get(name=job_name)
+            if str(job.state) != "JobState.JOB_STATE_SUCCEEDED":
+                return f"Job is not completed yet. Current state: {job.state}"
+            
+            file_name = job.dest.file_name
+            print(f"Downloading {file_name}...")
+            content = self.client.files.download(file=file_name)
+            
+            # Save raw jsonl
+            raw_path = os.path.join(output_dir, "raw_batch_results.jsonl")
+            with open(raw_path, "wb") as f:
+                f.write(content)
+                
+            # Extract
+            import json
+            final_files = []
+            
+            formats_to_extract = ["latex", "markdown"] if output_format == "both" else [output_format]
+            
+            for fmt in formats_to_extract:
+                ext = ".tex" if fmt == "latex" else ".md"
+                out_path = os.path.join(output_dir, f"extracted_document{ext}")
+                success_count = 0
+                
+                with open(raw_path, 'r', encoding='utf-8') as f_in, open(out_path, 'w', encoding='utf-8') as f_out:
+                    for line_num, line in enumerate(f_in, 1):
+                        line = line.strip()
+                        if not line: continue
+                        try:
+                            data = json.loads(line)
+                            content_str = data.get('response', {}).get('body', {}).get('choices', [{}])[0].get('message', {}).get('content', '')
+                            content_str = content_str.strip()
+                            if content_str.startswith('```json'): content_str = content_str[7:]
+                            if content_str.startswith('```'): content_str = content_str[3:]
+                            if content_str.endswith('```'): content_str = content_str[:-3]
+                            
+                            content_json = json.loads(content_str)
+                            base = content_json.get('base_latex_md')
+                            extracted_text = ""
+                            if isinstance(base, dict):
+                                extracted_text = base.get(fmt, '')
+                            elif isinstance(base, str):
+                                extracted_text = base
+                                
+                            if extracted_text:
+                                f_out.write(f"\n% --- Page {line_num} --- \n" if fmt=="latex" else f"\n<!-- Page {line_num} -->\n")
+                                f_out.write(extracted_text + "\n\n")
+                                success_count += 1
+                        except Exception as e:
+                            pass
+                final_files.append(out_path)
+            
+            return f"Successfully downloaded and extracted to: {', '.join(final_files)}"
+            
+        except Exception as e:
+            return f"Error downloading/extracting results: {str(e)}"

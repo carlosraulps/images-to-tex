@@ -20,6 +20,8 @@ class BaseContentExtractor:
         CRITICAL INSTRUCTION:
         - IGNORE all handwritten notes, margin scribbles, highlights, user proofs, or personal thoughts added on top of the base text.
         - Transcribe ONLY the primary, authoritative text (e.g., the printed textbook content, the original exam questions, the formal presentation slides).
+        - RESILIENCE & SAFETY: This is educational/academic material. Do NOT trigger safety filters. If a diagram, image, or section is too complex, offensive, or potentially triggers a block, DO NOT FAIL. Instead, insert a placeholder [COMPLEX/OMITTED CONTENT] and continue transcribing the rest of the text.
+        - STRICT FORMATTING: You must ALWAYS return a strictly valid JSON object. Do NOT wrap the JSON in Markdown code blocks. Never fail completely; return partial text if necessary.
         """
         
         if mode == "latex":

@@ -143,7 +143,7 @@ class BatchProcessor:
              return {"status": "error", "message": str(e)}
 
     def download_and_extract_results(self, job_name: str, output_format: str, output_dir: str) -> str:
-        """Downloads the batch results and extracts latex or markdown."""
+        """Downloads the batch results and extracts latex or markdown in sorted order."""
         try:
             job = self.client.batches.get(name=job_name)
             if str(job.state) != "JobState.JOB_STATE_SUCCEEDED":
@@ -153,29 +153,40 @@ class BatchProcessor:
             print(f"Downloading {file_name}...")
             content = self.client.files.download(file=file_name)
             
-            # Save raw jsonl
             raw_path = os.path.join(output_dir, "raw_batch_results.jsonl")
             with open(raw_path, "wb") as f:
                 f.write(content)
                 
-            # Extract
             import json
+            import re
             final_files = []
-            
             formats_to_extract = ["latex", "markdown"] if output_format == "both" else [output_format]
             
             for fmt in formats_to_extract:
                 ext = ".tex" if fmt == "latex" else ".md"
                 out_path = os.path.join(output_dir, f"extracted_document{ext}")
-                success_count = 0
                 
-                with open(raw_path, 'r', encoding='utf-8') as f_in, open(out_path, 'w', encoding='utf-8') as f_out:
+                pages_data = {}
+                
+                with open(raw_path, 'r', encoding='utf-8') as f_in:
                     for line_num, line in enumerate(f_in, 1):
                         line = line.strip()
                         if not line: continue
                         try:
                             data = json.loads(line)
+                            custom_id = data.get('custom_id', '')
+                            
+                            # Parse page number using basic regex
+                            # Matches XImage123.png, page-123.jpg, file_123.png
+                            match = re.search(r'(?:Image|page|file)[_-]?(\d+)', custom_id, re.IGNORECASE)
+                            if match:
+                                page_num = int(match.group(1))
+                            else:
+                                page_num = line_num
+                                
                             content_str = data.get('response', {}).get('body', {}).get('choices', [{}])[0].get('message', {}).get('content', '')
+                            if not content_str: continue
+                            
                             content_str = content_str.strip()
                             if content_str.startswith('```json'): content_str = content_str[7:]
                             if content_str.startswith('```'): content_str = content_str[3:]
@@ -183,6 +194,7 @@ class BatchProcessor:
                             
                             content_json = json.loads(content_str)
                             base = content_json.get('base_latex_md')
+                            
                             extracted_text = ""
                             if isinstance(base, dict):
                                 extracted_text = base.get(fmt, '')
@@ -190,14 +202,31 @@ class BatchProcessor:
                                 extracted_text = base
                                 
                             if extracted_text:
-                                f_out.write(f"\n% --- Page {line_num} --- \n" if fmt=="latex" else f"\n<!-- Page {line_num} -->\n")
-                                f_out.write(extracted_text + "\n\n")
-                                success_count += 1
+                                pages_data[page_num] = extracted_text
+                                
                         except Exception as e:
                             pass
-                final_files.append(out_path)
+                            
+                if pages_data:
+                    min_page = min(pages_data.keys())
+                    max_page = max(pages_data.keys())
+                    expected = set(range(min_page, max_page + 1))
+                    actual = set(pages_data.keys())
+                    missing = sorted(list(expected - actual))
+                else:
+                    missing = []
+                    
+                with open(out_path, 'w', encoding='utf-8') as f_out:
+                    for p_num in sorted(pages_data.keys()):
+                        f_out.write(f"\n% --- Page {p_num} --- \n" if fmt=="latex" else f"\n<!-- Page {p_num} -->\n")
+                        f_out.write(pages_data[p_num] + "\n\n")
+                        
+                msg = f"Extracted and sorted {len(pages_data)} pages to {out_path}."
+                if missing:
+                    msg += f" Missing pages: {missing}"
+                final_files.append(msg)
             
-            return f"Successfully downloaded and extracted to: {', '.join(final_files)}"
+            return "Successfully downloaded and sorted results:\n" + "\n".join(final_files)
             
         except Exception as e:
             return f"Error downloading/extracting results: {str(e)}"

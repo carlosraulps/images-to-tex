@@ -1,15 +1,15 @@
 {
-  "name": "images-to-tex",
+  "name": "docs-to-code",
   "version": "1.0.0",
   "description": "An Agent Skill providing tools to convert images of textbooks, handwritten equations, and notes into LaTeX or Markdown.",
   "mcpServers": {
-    "images-to-tex": {
+    "docs-to-code": {
       "command": "/Users/apple/venvs/research/bin/python3",
       "args": [
-        "/Users/apple/Research/img-to-tex/src/interfaces/mcp_server.py"
+        "/Users/apple/Research/docs-to-code/src/interfaces/mcp_server.py"
       ],
       "env": {
-        "PYTHONPATH": "/Users/apple/Research/img-to-tex",
+        "PYTHONPATH": "/Users/apple/Research/docs-to-code",
         "GOOGLE_API_KEY": "${GOOGLE_API_KEY}"
       }
     }

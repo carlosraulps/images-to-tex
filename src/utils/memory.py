@@ -6,7 +6,7 @@ from typing import Dict, Any
 class Memory:
     def __init__(self, log_path: str = None):
         if not log_path:
-            cache_dir = os.path.expanduser("~/.cache/images-to-tex")
+            cache_dir = os.path.expanduser("~/.cache/docs-to-code")
             os.makedirs(cache_dir, exist_ok=True)
             self.log_path = os.path.join(cache_dir, "mcp_memory.json")
         else:

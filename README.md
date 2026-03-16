@@ -27,7 +27,7 @@ A modular Python application that transforms handwritten notes (PDFs or Images) 
 
     ```bash
     git clone <repository_url>
-    cd img-to-tex
+    cd docs-to-code
     ```
 
 2. **Install dependencies**:
@@ -98,10 +98,10 @@ Add the connection configuration to your AI agent's extension config (e.g., `gem
 ```json
 {
   "mcpServers": {
-    "images-to-tex": {
+    "docs-to-code": {
       "command": "python3",
       "args": [
-        "/absolute/path/to/img-to-tex/mcp_server.py"
+        "/absolute/path/to/docs-to-code/mcp_server.py"
       ],
       "env": {
         "GOOGLE_API_KEY": "your_api_key_here"

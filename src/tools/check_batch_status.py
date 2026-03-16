@@ -10,14 +10,37 @@ class CheckBatchStatusInput(BaseModel):
 
 def check_batch_job(input_data: CheckBatchStatusInput) -> str:
     try:
+        job_id = input_data.job_id
+        
+        if job_id.startswith("local-"):
+            state_file = f"/Users/apple/Research/docs-to-code/{job_id}.json"
+            if not os.path.exists(state_file):
+                return json.dumps({"status": "processing_background", "message": "Background task is starting..."}, indent=2)
+                
+            with open(state_file, "r") as f:
+                state = json.load(f)
+                
+            if state.get("status") in ["extracting_images", "uploading_images"]:
+                status_msg = state.get("status")
+                return json.dumps({"status": "processing_background", "message": f"Background task is currently: {status_msg}..."}, indent=2)
+                
+            if state.get("status") in ["failed", "error"]:
+                return json.dumps(state, indent=2)
+                
+            real_job_id = state.get("job_id")
+            if not real_job_id:
+                return json.dumps({"status": "processing_background", "message": "Waiting for Gemini Batch API Job ID..."}, indent=2)
+                
+            job_id = real_job_id
+            
         processor = BatchProcessor()
-        result_meta = processor.check_job_status(input_data.job_id)
+        result_meta = processor.check_job_status(job_id)
         status = result_meta.get("status")
         
         if status == "completed":
             os.makedirs(input_data.output_dir, exist_ok=True)
             extraction_result = processor.download_and_extract_results(
-                input_data.job_id, 
+                job_id, 
                 input_data.output_format, 
                 input_data.output_dir
             )

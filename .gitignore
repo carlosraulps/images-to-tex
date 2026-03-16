@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .env
 processed_log.json
+local*
 .DS_Store
 test_project/
 venv/

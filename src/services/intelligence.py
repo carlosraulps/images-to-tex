@@ -165,7 +165,7 @@ class CachedIntelligence(Intelligence):
     Ideal when calling the API synchronously across multiple pages of the same document,
     saving input token costs by caching the massive system prompt.
     """
-    def __init__(self, api_key: str = None, display_name: str = "images-to-tex-cache"):
+    def __init__(self, api_key: str = None, display_name: str = "docs-to-code-cache"):
         super().__init__(api_key)
         self.cached_content = None
         self.display_name = display_name

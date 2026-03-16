@@ -19,26 +19,48 @@ When you invoke this capability:
 
 The following tools are available to the Agent through this skill's MCP server:
 
-### `convert_image_to_latex`
+### `process_document`
 
-Converts and processes an academic/mathematical image file.
+Converts and processes an academic/mathematical PDF or image directory into LaTeX or Markdown.
 
 **Arguments:**
 
-- `image_path` (string): MUST be an absolute file path mapping cleanly to a valid `.jpg`, `.png`, or similar image containing text/math.
+- `document_path` (string): MUST be an absolute file path mapping cleanly to a valid `.pdf` or directory containing images.
 - `mode` (string, Optional): The textual mode you require. MUST be exactly one of `["latex", "markdown", "both"]`. Defaults to `latex`.
+- `threshold_pages` (integer, Optional): Page count to trigger background processing. Defaults to 50.
 
-**Error Handling / Fallbacks:**
-If the underlying service encounters faults, it will gracefully catch them and return a standard Error JSON payload formatted as:
+**Behavior:**
+
+- **Synchronous Path:** If the document has fewer pages than `threshold_pages`, the tool processes all pages synchronously utilizing Gemini API **Context Caching** to reduce token costs and returns the extracted content immediately.
+- **Asynchronous Path (Batch API):** If the document is massive, the system acts as a traffic controller and routes the file to the Gemini Batch API. It will immediately return:
 
 ```json
 {
-  "error": "ErrorType",
+  "status": "processing_background",
+  "job_id": "batch_job_12345",
+  "message": "The document is very large and has been queued for background processing..."
+}
+```
+
+### `check_document_status`
+
+Checks the status of an asynchronous background job triggered by `process_document`.
+
+**Arguments:**
+
+- `job_id` (string): The Gemini Batch API job ID to check.
+
+**Error Handling / Fallbacks:**
+If the underlying service encounters faults (e.g., input validation failures), it will gracefully catch them and return a standard Error JSON:
+
+```json
+{
+  "error": "InputValidationError",
   "details": "Explanation of the failure."
 }
 ```
 
-If you encounter this payload, DO NOT PANIC. Parse the error visually, adjust the `image_path` or `mode`, and invoke the interface again.
+If you encounter this payload, DO NOT PANIC. Parse the error visually, adjust the arguments, and invoke the interface again.
 
 ## Available Modules
 

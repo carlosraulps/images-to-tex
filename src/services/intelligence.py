@@ -116,6 +116,98 @@ class Intelligence:
         self.client = genai.Client(api_key=self.api_key)
         self.model_name = 'gemini-3.1-pro-preview'
 
+class CachedIntelligence(Intelligence):
+    """
+    Extends Intelligence to use Gemini Context Caching.
+    Ideal when calling the API synchronously across multiple pages of the same document,
+    saving input token costs by caching the massive system prompt.
+    """
+    def __init__(self, api_key: str = None, display_name: str = "images-to-tex-cache"):
+        super().__init__(api_key)
+        self.cached_content = None
+        self.display_name = display_name
+        
+    def initialize_cache(self, mode: str):
+        """Creates a cached content object for the System/Master Prompt."""
+        from google.genai import types
+        master_prompt = ContextMerger.get_master_prompt(mode)
+        
+        # TTL is set to 60 minutes for a typical processing session
+        self.cached_content = self.client.caches.create(
+            model=self.model_name,
+            config=types.CreateCachedContentConfig(
+                contents=[master_prompt],
+                display_name=self.display_name,
+                ttl="3600s",
+            )
+        )
+        print(f"Context Cache created successfully: {self.cached_content.name}")
+
+    def transcribe_image(self, image_path: str, mode: str = "both") -> dict:
+        """Overrides transcribe to use the cached content logic if initialized."""
+        if not self.cached_content:
+            # Fallback to normal if cache wasn't initialized
+            return super().transcribe_image(image_path, mode)
+            
+        from src.utils import llm_utils
+        from google.genai import types
+
+        try:
+            file_ref = self.client.files.upload(file=image_path)
+            # Only send the image, the prompt is in the cache
+            contents = [file_ref]
+            
+            # Since llm_utils expects to append the master_prompt for self-correction, 
+            # we need a specialized or modified call. 
+            # To keep it simple, we use the standard generate_content here directly with the cache,
+            # or we pass the cache name to llm_utils.
+            # Let's handle retry locally for the cached version to keep schemas strict.
+            
+            result_dict = {}
+            for attempt in range(3):
+                try:
+                    response = self.client.models.generate_content(
+                        model=self.model_name,
+                        contents=contents,
+                        config=types.GenerateContentConfig(
+                            cached_content=self.cached_content.name,
+                            response_mime_type="application/json",
+                            response_schema=DocumentPayload
+                        )
+                    )
+                    sanitized_text = llm_utils.sanitize_json_string(response.text)
+                    parsed_data = DocumentPayload.model_validate_json(sanitized_text)
+                    result_dict = parsed_data.model_dump()
+                    break
+                except Exception as e:
+                    print(f"[Warning] Cached parsing try {attempt+1}/3 failed: {e}")
+                    # On failure, append error context for next try
+                    # To use cache with new context, we can just append to contents
+                    contents.append(f"Previous attempt error: {str(e)}. Strictly output JSON schema.")
+            
+            if not result_dict:
+               raise ValueError("Failed to parse valid JSON payload after 3 retries using Cache.")
+               
+            return result_dict
+
+        except Exception as e:
+            print(f"API Error processing {image_path}: {e}")
+            error_msg = f"% Error processing image: {os.path.basename(image_path)}\n% Error details: {str(e)}"
+            return {
+                "base_latex_md": {"latex": error_msg, "markdown": error_msg},
+                "annotations_metadata": []
+            }
+            
+    def cleanup(self):
+        """Deletes the cache to avoid unnecessary billing."""
+        if self.cached_content:
+            try:
+                self.client.caches.delete(name=self.cached_content.name)
+                print(f"Cleaned up Context Cache: {self.cached_content.name}")
+            except Exception as e:
+                print(f"Failed to cleanup cache: {e}")
+
+
     def transcribe_image(self, image_path: str, mode: str = "both") -> dict:
         """
         Sends the image to Gemini API and returns a structured dictionary representing the DocumentPayload.

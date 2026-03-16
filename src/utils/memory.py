@@ -4,8 +4,13 @@ import hashlib
 from typing import Dict, Any
 
 class Memory:
-    def __init__(self, log_path: str):
-        self.log_path = log_path
+    def __init__(self, log_path: str = None):
+        if not log_path:
+            cache_dir = os.path.expanduser("~/.cache/images-to-tex")
+            os.makedirs(cache_dir, exist_ok=True)
+            self.log_path = os.path.join(cache_dir, "mcp_memory.json")
+        else:
+            self.log_path = log_path
         self.state = self._load_state()
 
     def _load_state(self) -> Dict[str, Any]:

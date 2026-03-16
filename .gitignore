@@ -3,3 +3,7 @@ __pycache__/
 .env
 processed_log.json
 .DS_Store
+test_project/
+venv/
+.venv/
+.pytest_cache/

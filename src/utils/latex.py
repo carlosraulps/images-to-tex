@@ -1,14 +1,17 @@
 import os
 from typing import List
 
-def generate_tex_file(title: str, content_list: List[str], output_dir: str) -> str:
+from pathlib import Path
+
+def generate_tex_file(title: str, content_list: List[str], output_dir: str | Path) -> str:
     """
     Generates a .tex file for the given title and content.
     The content_list contains LaTeX strings (one per image/page).
     Returns the path to the generated file.
     """
+    output_dir = Path(output_dir)
     filename = f"{title}.tex"
-    output_path = os.path.join(output_dir, filename)
+    output_path = output_dir / filename
 
     try:
         with open(output_path, 'w') as f:

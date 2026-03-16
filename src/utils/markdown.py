@@ -28,13 +28,16 @@ def clean_latex_for_markdown(content: str) -> str:
     
     return content
 
-def generate_md_file(title: str, content_list: List[str], output_dir: str) -> str:
+from pathlib import Path
+
+def generate_md_file(title: str, content_list: List[str], output_dir: str | Path) -> str:
     """
     Generates a .md file for the given title and content.
     Returns the path to the generated file.
     """
+    output_dir = Path(output_dir)
     filename = f"{title}.md"
-    output_path = os.path.join(output_dir, filename)
+    output_path = output_dir / filename
 
     try:
         with open(output_path, 'w') as f:

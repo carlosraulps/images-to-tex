@@ -23,21 +23,24 @@ A modular Python application that transforms handwritten notes (PDFs or Images) 
 
 ### Setup
 
-1.  **Clone the repository**:
+1. **Clone the repository**:
+
     ```bash
     git clone <repository_url>
     cd img-to-tex
     ```
 
-2.  **Install dependencies**:
+2. **Install dependencies**:
+
     ```bash
     pip install -r requirements.txt
     ```
 
-3.  **Configure API Key**:
+3. **Configure API Key**:
     Get your API key from [Google AI Studio](https://aistudio.google.com/).
-    
+
     Create a `.env` file in the root directory:
+
     ```bash
     GOOGLE_API_KEY=your_api_key_here
     ```
@@ -51,16 +54,19 @@ python3 app.py /path/to/your/notes/folder
 ```
 
 You will be prompted to choose the output format interactively:
+
 ```text
 What would you like to generate? (latex/markdown/both) [both]:
 ```
 
 ### Folder Structure & Naming
+
 - The script looks for **PDFs** (which it splits automatically) or **Images**.
 - Images are grouped by title using the pattern: `TitleNameXImageNumber.png`.
   - Example: `Calculus_Ch1XImage1.png`, `Calculus_Ch1XImage2.png`.
 
 ### Output
+
 - A `.tex` file is generated for each title (e.g., `Calculus_Ch1.tex`).
 - A `.md` file is generated for each title (e.g., `Calculus_Ch1.md`).
 - A `processed_log.json` file is created to track progress.
